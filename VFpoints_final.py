@@ -8,6 +8,7 @@ Created on Wed Nov 13 20:29:04 2019
 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#This version works but skips lines in the csv
 """
 Created on Wed Nov 13 12:15:26 2019
 
@@ -21,40 +22,38 @@ import xml.etree.ElementTree as et
 
 HEAD = ['FULL_NAME','BIRTH_DATE','VISIT_DATE','IMAGE_FILE_NAME','X','Y','Result']
 
-STAGS = {'LAST_NAME','FIRST_NAME','BIRTH_DATE','GENDER','VISIT_DATE','IMAGE_FILE_NAME','DATE_TIME','SITE','NUM_THRESHOLD_POINTS','THRESHOLD_1','X','Y','Result_1'}
+directory = os.getcwd() #assigns directory to the file path of this python file
 
-directory = os.getcwd()
+def write_to_csv(my_dict):
+    with open('../54point.csv', 'a') as csvfile:
+        wr = csv.writer(csvfile)
+        wr.writerow(my_dict)
 
 def xml_parse(root):
+    FULL_NAME = 'FULL_NAME' in locals() or 'FULL_NAME' in globals()
     for i in root.iter():
         if (i.tag == 'FULL_NAME'):
-            FULL_NAME = i.text
+            FULL_NAME = i.text.replace(",",";")
         elif (i.tag == 'VISIT_DATE'):
             VISIT_DATE = i.text
         elif (i.tag == 'BIRTH_DATE'):
             BIRTH_DATE = i.text
         elif (i.tag == 'IMAGE_FILE_NAME'):
             EYE = i.text
-    my_dict = {}
-    my_dict_list = []
-   
-    for e in root.findall('.//THRESHOLD_XY_LOCATION'):
-       my_dict = {1: [FULL_NAME,BIRTH_DATE,VISIT_DATE,EYE,e.find('X').text,e.find('Y').text,e.find('THRESHOLD_1').text]}
-       my_dict_list.append(my_dict)
-    print(my_dict_list)
     
-    def write_to_csv(my_dict_list):
-        with open('../54point.csv', 'a') as csvfile:
-            writer = csv.writer(csvfile, delimiter='\n')
-            writer.writerow(my_dict_list)
-
-    write_to_csv(my_dict_list)  
-
+    
+    if(FULL_NAME):
+        my_dict = [FULL_NAME,BIRTH_DATE,VISIT_DATE,EYE]
+        for e in root.findall('.//THRESHOLD_XY_LOCATION'):
+            my_dict.append(e.find('THRESHOLD_1').text)                
+        print(my_dict)
+        write_to_csv(my_dict)
 
 for root,dirs,files in os.walk(directory):
     for i in files:
             if (i.endswith('.xml')):
                 fullname = os.path.join(root,i)
+                print(fullname)
                 tree = et.parse(fullname)
                 rooty = tree.getroot()
                 xml_parse(rooty)
